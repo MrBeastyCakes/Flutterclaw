@@ -178,3 +178,4 @@ class _SyntaxTheme {
         number = const Color(0xFFAE81FF),
         comment = const Color(0xFF75715E);
 }
+

@@ -61,7 +61,7 @@ class MarkdownMessage extends StatelessWidget {
         border: Border(
           left: BorderSide(color: cs.primary, width: 4),
         ),
-        color: cs.surfaceContainerHighest.withOpacity(0.5),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
       ),
       blockquotePadding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
       listBullet: base.bodyLarge?.copyWith(fontSize: 16),
@@ -75,13 +75,13 @@ class MarkdownMessage extends StatelessWidget {
       codeblockDecoration: const BoxDecoration(),
       horizontalRuleDecoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
+          top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
         ),
       ),
       tableHead: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface),
       tableBody: base.bodyMedium?.copyWith(color: cs.onSurface),
       tableBorder: TableBorder.all(
-        color: cs.outlineVariant.withOpacity(0.5),
+        color: cs.outlineVariant.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       tableColumnWidth: const FlexColumnWidth(),
@@ -134,3 +134,4 @@ class _PreElementBuilder extends MarkdownElementBuilder {
     return CodeBlock(code: code, language: language);
   }
 }
+

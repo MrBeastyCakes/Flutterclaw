@@ -110,3 +110,4 @@ class ToolUsage {
   bool get hasErrors => calls.any((c) => c.status == ToolStatus.error);
   bool get isRunning => calls.any((c) => c.status == ToolStatus.running);
 }
+

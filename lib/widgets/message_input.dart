@@ -65,11 +65,11 @@ class _MessageInputState extends State<MessageInput>
         decoration: BoxDecoration(
           color: cs.surface,
           border: Border(
-            top: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
+            top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
           ),
           boxShadow: [
             BoxShadow(
-              color: cs.shadow.withOpacity(0.03),
+              color: cs.shadow.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
@@ -204,3 +204,4 @@ class _IconButtonScaleState extends State<_IconButtonScale>
     );
   }
 }
+

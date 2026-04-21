@@ -16,10 +16,10 @@ class ToolTimeline extends StatelessWidget {
       margin: const EdgeInsets.only(left: 48, right: 16, top: 4, bottom: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -83,7 +83,7 @@ class _ToolCallChip extends StatelessWidget {
             height: 28,
             margin: const EdgeInsets.only(right: 12, left: 6),
             decoration: BoxDecoration(
-              color: _getStatusColor(context, call.status).withOpacity(0.3),
+              color: _getStatusColor(context, call.status).withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(1),
             ),
           ),
@@ -92,7 +92,7 @@ class _ToolCallChip extends StatelessWidget {
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: _getStatusColor(context, call.status).withOpacity(0.1),
+              color: _getStatusColor(context, call.status).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -136,7 +136,7 @@ class _ToolCallChip extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: _getStatusColor(context, call.status).withOpacity(0.1),
+              color: _getStatusColor(context, call.status).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -199,3 +199,4 @@ class _ToolCallChip extends StatelessWidget {
     }
   }
 }
+

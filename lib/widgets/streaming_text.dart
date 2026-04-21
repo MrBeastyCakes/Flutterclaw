@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 class StreamingText extends StatefulWidget {
@@ -22,6 +23,7 @@ class _StreamingTextState extends State<StreamingText> {
   String _displayedText = '';
   int _currentIndex = 0;
   bool _isComplete = false;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -33,6 +35,7 @@ class _StreamingTextState extends State<StreamingText> {
   void didUpdateWidget(covariant StreamingText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.text != oldWidget.text) {
+      _timer?.cancel();
       _currentIndex = 0;
       _displayedText = '';
       _isComplete = false;
@@ -40,25 +43,31 @@ class _StreamingTextState extends State<StreamingText> {
     }
   }
 
-  void _startStreaming() async {
-    while (_currentIndex < widget.text.length && mounted) {
-      await Future.delayed(widget.chunkDuration);
+  void _startStreaming() {
+    _timer?.cancel();
+    void tick() {
       if (!mounted) return;
-      
       final endIndex = (_currentIndex + widget.charsPerChunk).clamp(
         0,
         widget.text.length,
       );
-      
       setState(() {
         _displayedText = widget.text.substring(0, endIndex);
         _currentIndex = endIndex;
       });
+      if (_currentIndex < widget.text.length) {
+        _timer = Timer(widget.chunkDuration, tick);
+      } else {
+        setState(() => _isComplete = true);
+      }
     }
-    
-    if (mounted) {
-      setState(() => _isComplete = true);
-    }
+    tick();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -126,3 +135,4 @@ class _CursorState extends State<_Cursor> with SingleTickerProviderStateMixin {
     );
   }
 }
+

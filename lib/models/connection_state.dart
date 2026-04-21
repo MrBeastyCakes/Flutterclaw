@@ -41,3 +41,4 @@ class ConnectionInfo {
   bool get isConnecting => state == ConnectionState.connecting;
   bool get isReconnecting => state == ConnectionState.reconnecting;
 }
+

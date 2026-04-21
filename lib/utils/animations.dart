@@ -193,3 +193,4 @@ class _PulseOpacityState extends State<PulseOpacity>
     );
   }
 }
+

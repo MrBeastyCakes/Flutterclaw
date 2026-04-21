@@ -124,3 +124,4 @@ class _StatusColors {
     required this.icon,
   });
 }
+

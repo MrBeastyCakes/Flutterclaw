@@ -70,8 +70,8 @@ class _TypingIndicatorState extends State<TypingIndicator>
                   height: 7,
                   margin: const EdgeInsets.symmetric(horizontal: 2),
                   decoration: BoxDecoration(
-                    color: cs.onSurfaceVariant.withOpacity(
-                      _animations[index].value,
+                    color: cs.onSurfaceVariant.withValues(
+                      alpha: _animations[index].value,
                     ),
                     shape: BoxShape.circle,
                   ),
@@ -92,3 +92,4 @@ class _TypingIndicatorState extends State<TypingIndicator>
     super.dispose();
   }
 }
+

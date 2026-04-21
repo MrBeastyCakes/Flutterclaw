@@ -124,7 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Icon(
               Icons.chat_bubble_outline,
               size: 80,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
           ),
           const SizedBox(height: 20),
@@ -141,7 +141,7 @@ class _ChatScreenState extends State<ChatScreen> {
             'Your OpenClaw assistant is ready',
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -149,3 +149,4 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
+

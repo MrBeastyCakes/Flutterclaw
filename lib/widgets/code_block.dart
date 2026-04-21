@@ -25,7 +25,7 @@ class CodeBlock extends StatelessWidget {
         color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -175,3 +175,4 @@ class _HighlightBody extends StatelessWidget {
     );
   }
 }
+

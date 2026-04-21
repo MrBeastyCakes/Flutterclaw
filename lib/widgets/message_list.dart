@@ -40,11 +40,16 @@ class _MessageListState extends State<MessageList> {
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      final position = _scrollController.position;
+      final threshold = 100.0;
+      final isNearBottom = position.maxScrollExtent - position.pixels <= threshold;
+      if (isNearBottom) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     }
   }
 
@@ -61,7 +66,7 @@ class _MessageListState extends State<MessageList> {
             Icon(
               Icons.search_off,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 16),
             Text(
@@ -141,3 +146,4 @@ class _MessageListState extends State<MessageList> {
     super.dispose();
   }
 }
+

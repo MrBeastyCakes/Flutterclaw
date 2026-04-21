@@ -273,3 +273,4 @@ class ChatProvider extends ChangeNotifier {
     super.dispose();
   }
 }
+

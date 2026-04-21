@@ -86,7 +86,7 @@ class MessageBubble extends StatelessWidget {
               Text(
                 _formatTime(message.timestamp),
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                   fontSize: 12,
                 ),
               ),
@@ -282,3 +282,4 @@ class MessageBubble extends StatelessWidget {
     }
   }
 }
+

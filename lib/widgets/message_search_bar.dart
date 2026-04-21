@@ -105,3 +105,4 @@ class _MessageSearchBarState extends State<MessageSearchBar>
     );
   }
 }
+

@@ -65,12 +65,12 @@ class _ThinkingBubbleState extends State<ThinkingBubble>
         margin: const EdgeInsets.only(left: 16, right: 64, bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isThinking
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
-                : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -128,7 +128,7 @@ class _ThinkingBubbleState extends State<ThinkingBubble>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: MarkdownBody(
@@ -155,3 +155,4 @@ class _ThinkingBubbleState extends State<ThinkingBubble>
     );
   }
 }
+

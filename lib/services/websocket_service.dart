@@ -224,8 +224,8 @@ class WebSocketService {
         'minProtocol': 3,
         'maxProtocol': 3,
         'client': {
-          'id': 'flutterclaw',
-          'version': '0.3.1',
+          'id': 'cli',
+          'version': '0.3.7',
           'platform': 'android',
           'mode': 'operator',
         },
@@ -236,7 +236,7 @@ class WebSocketService {
         'permissions': {},
         'auth': {'token': _authToken},
         'locale': 'en-US',
-        'userAgent': 'Flutterclaw/0.3.1',
+        'userAgent': 'Flutterclaw/0.3.7',
         'device': {
           'id': 'flutterclaw_device_${DateTime.now().millisecondsSinceEpoch}',
           'nonce': nonce,

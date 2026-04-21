@@ -85,8 +85,9 @@ class SyntaxHighlighter {
   //  Regex-based highlight rules
   // ------------------------------------------------------------------
 
-  static final _commentRE = RegExp(r'//.*|/\*.*?\*/|\#.*', multiLine: true);
-  static final _stringRE = RegExp(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"");
+  static final _commentRE = RegExp(r"//.*|/\*.*?\*/|\#.*", multiLine: true);
+  static final _singleQuoteStringRE = RegExp(r"'(?:[^'\\]|\\.)*'");
+  static final _doubleQuoteStringRE = RegExp(r'"(?:[^"\\]|\\.)*"');
   static final _numberRE = RegExp(r'\b\d+(\.\d+)?\b');
   static final _keywordRE = RegExp(
     r'\b(?:abstract|as|assert|async|await|break|case|catch|class|const|continue|covariant|default|deferred|do|dynamic|else|enum|export|extends|extension|external|factory|false|final|finally|for|Function|get|hide|if|implements|import|in|interface|is|late|library|mixin|null|on|operator|part|required|rethrow|return|set|show|static|super|switch|sync|this|throw|true|try|typedef|var|void|while|with|yield)\b',
@@ -97,7 +98,8 @@ class SyntaxHighlighter {
 
   List<_HighlightRule> get _dartRules => [
     _HighlightRule(_commentRE, (t) => t.comment),
-    _HighlightRule(_stringRE, (t) => t.string),
+    _HighlightRule(_singleQuoteStringRE, (t) => t.string),
+    _HighlightRule(_doubleQuoteStringRE, (t) => t.string),
     _HighlightRule(_numberRE, (t) => t.number),
     _HighlightRule(_keywordRE, (t) => t.keyword),
   ];
@@ -105,14 +107,16 @@ class SyntaxHighlighter {
   List<_HighlightRule> get _jsonYamlRules => [
     _HighlightRule(_commentRE, (t) => t.comment),
     _HighlightRule(_jsonKeyRE, (t) => t.keyword),
-    _HighlightRule(_stringRE, (t) => t.string),
+    _HighlightRule(_singleQuoteStringRE, (t) => t.string),
+    _HighlightRule(_doubleQuoteStringRE, (t) => t.string),
     _HighlightRule(_numberRE, (t) => t.number),
     _HighlightRule(_jsonBoolNullRE, (t) => t.keyword),
   ];
 
   List<_HighlightRule> get _pythonRules => [
     _HighlightRule(RegExp(r'\#.*'), (t) => t.comment),
-    _HighlightRule(_stringRE, (t) => t.string),
+    _HighlightRule(_singleQuoteStringRE, (t) => t.string),
+    _HighlightRule(_doubleQuoteStringRE, (t) => t.string),
     _HighlightRule(_numberRE, (t) => t.number),
     _HighlightRule(
       RegExp(
@@ -124,7 +128,8 @@ class SyntaxHighlighter {
 
   List<_HighlightRule> get _shellRules => [
     _HighlightRule(RegExp(r'\#.*'), (t) => t.comment),
-    _HighlightRule(_stringRE, (t) => t.string),
+    _HighlightRule(_singleQuoteStringRE, (t) => t.string),
+    _HighlightRule(_doubleQuoteStringRE, (t) => t.string),
     _HighlightRule(
       RegExp(
         r'\b(?:cd|ls|cat|echo|grep|sed|awk|chmod|chown|curl|wget|ssh|scp|rm|cp|mv|mkdir|touch|sudo|if|then|else|fi|for|do|done|while|case|esac|function|return|exit|export|source)\b',

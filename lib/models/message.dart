@@ -36,17 +36,51 @@ class ChatMessage {
         timestamp = timestamp ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
-    return {
-      'id': id,
-      'role': role.name,
-      'content': content,
-      'timestamp': timestamp.toIso8601String(),
-      'status': status.name,
-      'metadata': metadata,
-    };
-  }
+    'id': id,
+    'role': role.name,
+    'content': content,
+    'timestamp': timestamp.toIso8601String(),
+    'status': status.name,
+    'metadata': metadata,
+    'toolUsages': toolUsages?.map((u) => {
+      'id': u.id,
+      'timestamp': u.timestamp.toIso8601String(),
+      'calls': u.calls.map((c) => {
+        'id': c.id,
+        'name': c.name,
+        'description': c.description,
+        'status': c.status.name,
+        'timestamp': c.timestamp.toIso8601String(),
+        'duration': c.duration?.inMilliseconds,
+        'result': c.result,
+        'error': c.error,
+        'parameters': c.parameters,
+      }).toList(),
+    }).toList(),
+  };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    List<ToolUsage>? usages;
+    if (json['toolUsages'] != null) {
+      usages = (json['toolUsages'] as List).map((u) => ToolUsage(
+        id: u['id'] as String,
+        timestamp: DateTime.parse(u['timestamp'] as String),
+        calls: (u['calls'] as List).map((c) => ToolCall(
+          id: c['id'] as String,
+          name: c['name'] as String,
+          description: c['description'] as String?,
+          status: ToolStatus.values.byName(c['status'] as String),
+          timestamp: DateTime.parse(c['timestamp'] as String),
+          duration: c['duration'] != null
+              ? Duration(milliseconds: c['duration'] as int)
+              : null,
+          result: c['result'] as String?,
+          error: c['error'] as String?,
+          parameters: c['parameters'] as Map<String, dynamic>?,
+        )).toList(),
+      )).toList();
+    }
+
     return ChatMessage(
       id: json['id'] as String,
       role: MessageRole.values.byName(json['role'] as String),
@@ -54,6 +88,7 @@ class ChatMessage {
       timestamp: DateTime.parse(json['timestamp'] as String),
       status: MessageStatus.values.byName(json['status'] as String),
       metadata: json['metadata'] as Map<String, dynamic>?,
+      toolUsages: usages,
     );
   }
 
@@ -62,6 +97,7 @@ class ChatMessage {
     String? content,
     MessageStatus? status,
     Map<String, dynamic>? metadata,
+    List<ToolUsage>? toolUsages,
   }) {
     return ChatMessage(
       id: id,
@@ -70,6 +106,7 @@ class ChatMessage {
       timestamp: timestamp,
       status: status ?? this.status,
       metadata: metadata ?? this.metadata,
+      toolUsages: toolUsages ?? this.toolUsages,
     );
   }
 }

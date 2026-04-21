@@ -8,6 +8,8 @@ class ConnectionStatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Consumer<ChatProvider>(
       builder: (context, provider, child) {
         final info = provider.connectionInfo;
@@ -16,21 +18,24 @@ class ConnectionStatusBar extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
+        final colors = _themeColors(info.state, cs);
+
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          color: _getBackgroundColor(info.state),
+          curve: Curves.easeInOut,
+          color: colors.background,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SafeArea(
             top: false,
             child: Row(
               children: [
-                _getIcon(info.state),
-                const SizedBox(width: 8),
+                colors.icon,
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     _getMessage(info),
                     style: TextStyle(
-                      color: _getTextColor(info.state),
+                      color: colors.text,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -41,7 +46,7 @@ class ConnectionStatusBar extends StatelessWidget {
                   TextButton(
                     onPressed: () => provider.reconnect(),
                     style: TextButton.styleFrom(
-                      foregroundColor: _getTextColor(info.state),
+                      foregroundColor: colors.text,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -56,58 +61,44 @@ class ConnectionStatusBar extends StatelessWidget {
     );
   }
 
-  Color _getBackgroundColor(ConnectionState state) {
+  _StatusColors _themeColors(ConnectionState state, ColorScheme cs) {
     switch (state) {
       case ConnectionState.connecting:
       case ConnectionState.reconnecting:
-        return Colors.orange.shade100;
-      case ConnectionState.error:
-      case ConnectionState.disconnected:
-        return Colors.red.shade100;
-      case ConnectionState.connected:
-        return Colors.transparent;
-    }
-  }
-
-  Color _getTextColor(ConnectionState state) {
-    switch (state) {
-      case ConnectionState.connecting:
-      case ConnectionState.reconnecting:
-        return Colors.orange.shade900;
-      case ConnectionState.error:
-      case ConnectionState.disconnected:
-        return Colors.red.shade900;
-      case ConnectionState.connected:
-        return Colors.transparent;
-    }
-  }
-
-  Widget _getIcon(ConnectionState state) {
-    switch (state) {
-      case ConnectionState.connecting:
-      case ConnectionState.reconnecting:
-        return SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation(Colors.orange.shade900),
+        return _StatusColors(
+          background: cs.primaryContainer.withOpacity(0.7),
+          text: cs.onPrimaryContainer,
+          icon: SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation(cs.onPrimaryContainer),
+            ),
           ),
         );
       case ConnectionState.error:
       case ConnectionState.disconnected:
-        return Icon(Icons.error_outline, size: 18, color: Colors.red.shade900);
+        return _StatusColors(
+          background: cs.errorContainer.withOpacity(0.8),
+          text: cs.onErrorContainer,
+          icon: Icon(Icons.error_outline, size: 18, color: cs.onErrorContainer),
+        );
       case ConnectionState.connected:
-        return const SizedBox.shrink();
+        return _StatusColors(
+          background: Colors.transparent,
+          text: Colors.transparent,
+          icon: const SizedBox.shrink(),
+        );
     }
   }
 
   String _getMessage(ConnectionInfo info) {
     switch (info.state) {
       case ConnectionState.connecting:
-        return 'Connecting to OpenClaw...';
+        return 'Connecting to OpenClaw…';
       case ConnectionState.reconnecting:
-        return 'Reconnecting (attempt ${info.reconnectAttempts})...';
+        return 'Reconnecting (attempt ${info.reconnectAttempts})…';
       case ConnectionState.error:
         return info.errorMessage ?? 'Connection error';
       case ConnectionState.disconnected:
@@ -116,4 +107,15 @@ class ConnectionStatusBar extends StatelessWidget {
         return '';
     }
   }
+}
+
+class _StatusColors {
+  final Color background;
+  final Color text;
+  final Widget icon;
+  const _StatusColors({
+    required this.background,
+    required this.text,
+    required this.icon,
+  });
 }

@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../models/message.dart';
 import '../providers/chat_provider.dart';
 import 'message_bubble.dart';
 import 'typing_indicator.dart';
-import 'package:provider/provider.dart';
+import '../utils/animations.dart';
 
 class MessageList extends StatefulWidget {
   final List<ChatMessage> messages;
+  final bool isTyping;
 
   const MessageList({
     super.key,
     required this.messages,
+    this.isTyping = false,
   });
 
   @override
@@ -20,6 +22,7 @@ class MessageList extends StatefulWidget {
 
 class _MessageListState extends State<MessageList> {
   final ScrollController _scrollController = ScrollController();
+  final Map<String, bool> _seenIds = {};
 
   @override
   void initState() {
@@ -47,46 +50,85 @@ class _MessageListState extends State<MessageList> {
 
   @override
   Widget build(BuildContext context) {
-    final isTyping = context.watch<ChatProvider>().isTyping;
-    
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: widget.messages.length + (isTyping ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (isTyping && index == widget.messages.length) {
-          return const TypingIndicator();
+    final provider = context.watch<ChatProvider>();
+    final displayMessages = provider.filteredMessages;
+
+    if (displayMessages.isEmpty && provider.searchQuery.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No messages match "${provider.searchQuery}"',
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Simulate refresh — in production this would fetch history
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('History refreshed'),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 1),
+            ),
+          );
         }
-        
-        final message = widget.messages[index];
-        final showTimestamp = _shouldShowTimestamp(index);
-        
-        return MessageBubble(
-          message: message,
-          showTimestamp: showTimestamp,
-          onRetry: () => _retryMessage(context, message),
-          onDelete: () => _deleteMessage(context, index),
-        );
       },
+      displacement: 40,
+      color: Theme.of(context).colorScheme.primary,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: displayMessages.length + (widget.isTyping ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == displayMessages.length && widget.isTyping) {
+            return const Align(
+              alignment: Alignment.centerLeft,
+              child: TypingIndicator(),
+            );
+          }
+
+          final message = displayMessages[index];
+          final showTimestamp = _shouldShowTimestamp(displayMessages, index);
+          final isFirstInGroup = _isFirstInGroup(displayMessages, index);
+
+          return MessageBubble(
+            message: message,
+            showTimestamp: showTimestamp,
+            isFirstInGroup: isFirstInGroup,
+          );
+        },
+      ),
     );
   }
 
-  bool _shouldShowTimestamp(int index) {
+  bool _shouldShowTimestamp(List<ChatMessage> msgs, int index) {
     if (index == 0) return true;
-    
-    final current = widget.messages[index].timestamp;
-    final previous = widget.messages[index - 1].timestamp;
-    
+    final current = msgs[index].timestamp;
+    final previous = msgs[index - 1].timestamp;
     return current.difference(previous).inMinutes >= 5;
   }
 
-  void _retryMessage(BuildContext context, ChatMessage message) {
-    context.read<ChatProvider>().sendMessage(message.content);
-  }
-
-  void _deleteMessage(BuildContext context, int index) {
-    final message = widget.messages[index];
-    context.read<ChatProvider>().removeMessage(message.id);
+  bool _isFirstInGroup(List<ChatMessage> msgs, int index) {
+    if (index == 0) return true;
+    return msgs[index].role != msgs[index - 1].role;
   }
 
   @override

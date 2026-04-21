@@ -198,17 +198,41 @@ class WebSocketService {
         return;
       }
       
-      // Handle regular messages
-      final message = ChatMessage.fromJson(json);
-      _messageController.add(message);
+      // Handle events (heartbeat, system events) - don't show in chat
+      if (msgType == 'event') {
+        final eventType = json['event'] as String?;
+        
+        // Handle connect challenge (already handled above, but double-check)
+        if (eventType == 'connect.challenge') {
+          return; // Already handled above
+        }
+        
+        // Handle health/heartbeat events silently
+        if (eventType == 'health' || eventType == 'heartbeat' || eventType == 'tick') {
+          return; // Silently ignore health checks
+        }
+        
+        // For other events, log but don't show in chat unless it's a message
+        if (eventType == 'message' || eventType == 'chat') {
+          // Fall through to message handling below
+        } else {
+          // Unknown event type, ignore
+          return;
+        }
+      }
+      
+      // Handle regular messages (type: 'message' or legacy format)
+      if (msgType == 'message' || json.containsKey('content') || json.containsKey('text')) {
+        final message = ChatMessage.fromJson(json);
+        _messageController.add(message);
+        return;
+      }
+      
+      // If we get here, it's an unhandled message type - log but don't show
+      return;
     } catch (e) {
-      // Handle non-JSON messages or system messages
-      final systemMessage = ChatMessage(
-        role: MessageRole.system,
-        content: data.toString(),
-        metadata: {'raw': true},
-      );
-      _messageController.add(systemMessage);
+      // Handle non-JSON messages or system messages - don't show in chat
+      return;
     }
   }
 

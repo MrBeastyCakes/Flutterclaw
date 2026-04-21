@@ -236,11 +236,7 @@ class WebSocketService {
         'permissions': {},
         'auth': {'token': _authToken},
         'locale': 'en-US',
-        'userAgent': 'Flutterclaw/0.3.7',
-        'device': {
-          'id': 'flutterclaw_device_${DateTime.now().millisecondsSinceEpoch}',
-          'nonce': nonce,
-        },
+        'userAgent': 'Flutterclaw/0.3.9',
       },
     };
     

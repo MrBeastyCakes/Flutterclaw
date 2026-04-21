@@ -210,6 +210,10 @@ class ChatProvider extends ChangeNotifier {
     await _webSocketService.connect();
   }
 
+  Future<void> disconnect() async {
+    await _webSocketService.disconnect();
+  }
+
   void setServerUrl(String url) {
     _webSocketService.serverUrl = url;
     reconnect();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
+import '../models/connection_state.dart' as model;
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -35,6 +36,71 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Your name in conversations',
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showNameDialog(context),
+          ),
+          const Divider(),
+          _SectionHeader(title: 'Connection Control'),
+          Consumer<ChatProvider>(
+            builder: (context, provider, child) {
+              final isConnected = provider.connectionInfo.state == model.ConnectionState.connected;
+              final isConnecting = provider.connectionInfo.state == model.ConnectionState.connecting ||
+                  provider.connectionInfo.state == model.ConnectionState.reconnecting;
+              
+              return Column(
+                children: [
+                  _SettingTile(
+                    icon: isConnected ? Icons.cloud_done : Icons.cloud_off,
+                    title: isConnected ? 'Connected' : isConnecting ? 'Connecting...' : 'Disconnected',
+                    subtitle: provider.connectionInfo.serverUrl ?? 'Not configured',
+                    iconColor: isConnected 
+                        ? Theme.of(context).colorScheme.primary 
+                        : isConnecting 
+                            ? Theme.of(context).colorScheme.secondary 
+                            : Theme.of(context).colorScheme.error,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isConnecting)
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          )
+                        else
+                          IconButton(
+                            onPressed: () => isConnected 
+                                ? provider.disconnect() 
+                                : provider.reconnect(),
+                            icon: Icon(isConnected ? Icons.stop : Icons.play_arrow),
+                            color: isConnected 
+                                ? Theme.of(context).colorScheme.error 
+                                : Theme.of(context).colorScheme.primary,
+                          ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () => provider.reconnect(),
+                          icon: const Icon(Icons.refresh),
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (provider.connectionInfo.errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(
+                        provider.connectionInfo.errorMessage!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           const Divider(),
           _SectionHeader(title: 'Appearance'),

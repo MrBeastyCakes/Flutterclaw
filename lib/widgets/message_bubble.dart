@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/message.dart';
 import 'tool_timeline.dart';
-import 'markdown_message.dart';
-import 'message_actions_sheet.dart';
-import '../utils/animations.dart';
-import '../utils/clipboard.dart';
+import 'message_actions.dart';
+import 'code_block.dart';
+import 'thinking_bubble.dart';
+import 'streaming_text.dart';
 
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
   final bool showTimestamp;
-  final bool isFirstInGroup;
+  final VoidCallback? onRetry;
+  final VoidCallback? onDelete;
 
   const MessageBubble({
     super.key,
     required this.message,
     this.showTimestamp = false,
-    this.isFirstInGroup = true,
+    this.onRetry,
+    this.onDelete,
   });
 
   @override
@@ -25,136 +28,169 @@ class MessageBubble extends StatelessWidget {
     final isSystem = message.role == MessageRole.system;
     
     if (isSystem) {
-      return FadeSlideIn(
-        child: _buildSystemMessage(context),
-      );
+      return _buildSystemMessage(context);
     }
 
-    return FadeSlideIn(
-      delay: isFirstInGroup ? const Duration(milliseconds: 30) : Duration.zero,
+    return Column(
+      crossAxisAlignment:
+          isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        if (showTimestamp) _buildTimestamp(context),
+        if (message.thinking != null || (message.role == MessageRole.assistant && message.isStreaming))
+          ThinkingBubble(
+            thinking: message.thinking,
+            state: message.isStreaming ? ThinkingState.thinking : ThinkingState.completed,
+          ),
+        GestureDetector(
+          onLongPress: () => _showActions(context),
+          child: isUser
+              ? _buildUserBubble(context)
+              : _buildAssistantBubble(context),
+        ),
+        if (message.toolUsages != null && message.toolUsages!.isNotEmpty)
+          ToolTimeline(toolUsages: message.toolUsages!),
+      ],
+    );
+  }
+
+  Widget _buildUserBubble(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(4),
+        ),
+      ),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.75,
+      ),
       child: Column(
-        crossAxisAlignment:
-            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (showTimestamp) _buildTimestamp(context),
-          if (isUser || isSystem)
-            _buildUserMessage(context, isUser)
-          else
-            _buildAssistantMessage(context),
-          if (message.toolUsages != null && message.toolUsages!.isNotEmpty)
-            ToolTimeline(toolUsages: message.toolUsages!),
+          Text(
+            message.content,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onPrimary,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _formatTime(message.timestamp),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(width: 4),
+              _buildStatusIcon(),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildAssistantMessage(BuildContext context) {
-    return GestureDetector(
-      onLongPress: () => _showActions(context),
-      child: ScaleBounce(
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.82,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              MarkdownMessage(content: message.content),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatTime(message.timestamp),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+  Widget _buildAssistantBubble(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
       ),
-    );
-  }
-
-  Widget _buildUserMessage(BuildContext context, bool isUser) {
-    return GestureDetector(
-      onLongPress: () => _showActions(context),
-      child: ScaleBounce(
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isUser
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(20),
-              topRight: const Radius.circular(20),
-              bottomLeft: Radius.circular(isUser ? 20 : 4),
-              bottomRight: Radius.circular(isUser ? 4 : 20),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.shadow.withOpacity(0.06),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.75,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (message.isStreaming)
+            StreamingText(
+              text: message.content,
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface,
+                height: 1.5,
               ),
-            ],
-          ),
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.82,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SelectableText(
-                message.content,
-                style: TextStyle(
-                  color: isUser
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.onSurface,
+            )
+          else
+            MarkdownBody(
+              data: message.content,
+              selectable: true,
+              styleSheet: MarkdownStyleSheet(
+                p: TextStyle(
                   fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface,
                   height: 1.5,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatTime(message.timestamp),
-                    style: TextStyle(
-                      color: isUser
-                          ? Theme.of(context)
-                              .colorScheme
-                              .onPrimary
-                              .withOpacity(0.7)
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
-                      fontSize: 12,
+                code: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  fontFamily: 'monospace',
+                ),
+                codeblockDecoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                codeblockPadding: const EdgeInsets.all(16),
+                blockquote: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+                blockquoteDecoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 4,
                     ),
                   ),
-                  if (isUser) ...[
-                    const SizedBox(width: 4),
-                    _buildStatusIcon(),
-                  ],
-                ],
+                ),
+                blockquotePadding: const EdgeInsets.only(left: 16),
+                h1: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                h2: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                h3: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                listBullet: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                a: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                ),
               ),
-            ],
+            ),
+          const SizedBox(height: 4),
+          Text(
+            _formatTime(message.timestamp),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -195,6 +231,17 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
+  void _showActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => MessageActions(
+        message: message,
+        onRetry: onRetry,
+        onDelete: onDelete,
+      ),
+    );
+  }
+
   Widget _buildStatusIcon() {
     switch (message.status) {
       case MessageStatus.sending:
@@ -213,16 +260,6 @@ class MessageBubble extends StatelessWidget {
       case MessageStatus.error:
         return const Icon(Icons.error_outline, size: 14, color: Colors.red);
     }
-  }
-
-  void _showActions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => MessageActionsSheet(message: message),
-    );
   }
 
   String _formatTime(DateTime dateTime) {

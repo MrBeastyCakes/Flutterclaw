@@ -47,11 +47,68 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _onMessageReceived(ChatMessage message) {
-    if (message.role == MessageRole.assistant) {
+    // Handle streaming updates for existing assistant messages
+    if (message.role == MessageRole.assistant && message.isStreaming) {
+      final existingIndex = _messages.indexWhere(
+        (m) => m.id == message.id && m.role == MessageRole.assistant,
+      );
+      if (existingIndex != -1) {
+        // Update existing streaming message
+        _messages[existingIndex] = message;
+        notifyListeners();
+        return;
+      }
+    }
+    
+    // Handle tool calls appearing mid-stream
+    if (message.role == MessageRole.tool) {
+      // Find the last assistant message and attach tool usage
+      final lastAssistantIndex = _messages.lastIndexWhere(
+        (m) => m.role == MessageRole.assistant,
+      );
+      if (lastAssistantIndex != -1) {
+        final current = _messages[lastAssistantIndex];
+        final updatedToolUsages = [...?(current.toolUsages ?? []), ...?(message.toolUsages ?? [])];
+        _messages[lastAssistantIndex] = current.copyWith(
+          toolUsages: updatedToolUsages.isNotEmpty ? updatedToolUsages : null,
+        );
+        notifyListeners();
+        return;
+      }
+    }
+    
+    if (message.role == MessageRole.assistant && !message.isStreaming) {
       _isTyping = false;
     }
     
     _messages.add(message);
+    notifyListeners();
+  }
+
+  /// Update an existing streaming message with new content
+  void updateStreamingMessage(String messageId, {
+    String? content,
+    String? thinking,
+    bool? isStreaming,
+    List<ToolUsage>? toolUsages,
+  }) {
+    final index = _messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+    
+    final current = _messages[index];
+    _messages[index] = current.copyWith(
+      content: content ?? current.content,
+      thinking: thinking ?? current.thinking,
+      isStreaming: isStreaming ?? current.isStreaming,
+      toolUsages: toolUsages ?? current.toolUsages,
+    );
+    notifyListeners();
+  }
+
+  /// Finalize a streaming message (mark as complete)
+  void finalizeStreamingMessage(String messageId) {
+    updateStreamingMessage(messageId, isStreaming: false);
+    _isTyping = false;
     notifyListeners();
   }
 

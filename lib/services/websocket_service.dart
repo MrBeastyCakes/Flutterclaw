@@ -6,6 +6,9 @@ import 'package:web_socket_channel/io.dart';
 import '../models/message.dart';
 import '../models/connection_state.dart';
 
+/// Callback for streaming message chunks
+typedef StreamChunkCallback = void Function(String messageId, String chunk, {String? thinking, List<ToolUsage>? toolUsages});
+
 class WebSocketService {
   static const String _defaultServerUrl = 'ws://localhost:8765';
   static const int _maxReconnectAttempts = 5;
@@ -14,9 +17,11 @@ class WebSocketService {
   WebSocketChannel? _channel;
   final _messageController = StreamController<ChatMessage>.broadcast();
   final _connectionController = StreamController<ConnectionInfo>.broadcast();
+  final _streamChunkController = StreamController<Map<String, dynamic>>.broadcast();
   
   Stream<ChatMessage> get messageStream => _messageController.stream;
   Stream<ConnectionInfo> get connectionStream => _connectionController.stream;
+  Stream<Map<String, dynamic>> get streamChunkStream => _streamChunkController.stream;
   
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
@@ -72,6 +77,38 @@ class WebSocketService {
   void _onMessage(dynamic data) {
     try {
       final json = jsonDecode(data as String);
+      
+      // Handle streaming chunks
+      if (json['type'] == 'stream_chunk') {
+        _streamChunkController.add({
+          'messageId': json['messageId'] as String,
+          'chunk': json['chunk'] as String? ?? '',
+          'thinking': json['thinking'] as String?,
+          'toolUsages': json['toolUsages'] != null
+              ? (json['toolUsages'] as List).map((u) => ToolUsage(
+                  id: u['id'] as String,
+                  timestamp: DateTime.parse(u['timestamp'] as String),
+                  calls: (u['calls'] as List).map((c) => ToolCall(
+                    id: c['id'] as String,
+                    name: c['name'] as String,
+                    description: c['description'] as String?,
+                    status: ToolStatus.values.byName(c['status'] as String),
+                    timestamp: DateTime.parse(c['timestamp'] as String),
+                    duration: c['duration'] != null
+                        ? Duration(milliseconds: c['duration'] as int)
+                        : null,
+                    result: c['result'] as String?,
+                    error: c['error'] as String?,
+                    parameters: c['parameters'] as Map<String, dynamic>?,
+                  )).toList(),
+                )).toList()
+              : null,
+          'isComplete': json['isComplete'] as bool? ?? false,
+        });
+        return;
+      }
+      
+      // Handle regular messages
       final message = ChatMessage.fromJson(json);
       _messageController.add(message);
     } catch (e) {
@@ -126,12 +163,6 @@ class WebSocketService {
       throw StateError('WebSocket is not connected');
     }
 
-    final message = ChatMessage(
-      role: MessageRole.user,
-      content: content,
-      metadata: metadata,
-    );
-
     final payload = {
       'type': 'message',
       'chatJid': _chatId,
@@ -164,5 +195,6 @@ class WebSocketService {
     disconnect();
     _messageController.close();
     _connectionController.close();
+    _streamChunkController.close();
   }
 }

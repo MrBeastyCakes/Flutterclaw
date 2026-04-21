@@ -6,9 +6,7 @@ import 'package:web_socket_channel/io.dart';
 import '../models/message.dart';
 import '../models/connection_state.dart';
 import '../models/tool_call.dart';
-
-/// Callback for streaming message chunks
-typedef StreamChunkCallback = void Function(String messageId, String chunk, {String? thinking, List<ToolUsage>? toolUsages});
+import '../utils/logger.dart';
 
 /// OpenClaw Gateway service using WebSocket with protocol v3 handshake.
 ///
@@ -18,7 +16,6 @@ typedef StreamChunkCallback = void Function(String messageId, String chunk, {Str
 /// 3. Send connect request with auth token
 /// 4. Wait for hello-ok response
 /// 5. Mark connection as established
-/// 6. Normal message flow
 class WebSocketService {
   static const String _defaultServerUrl = 'ws://192.168.92.79:18789';
   static const int _maxReconnectAttempts = 5;
@@ -41,6 +38,7 @@ class WebSocketService {
   String _senderName = 'Flutter User';
   String _authToken = '';
   bool _handshakeComplete = false;
+  String? _lastError;
 
   // Setters for configuration
   set serverUrl(String url) => _serverUrl = url;

@@ -44,13 +44,25 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 PopupMenuButton<String>(
                   onSelected: (value) {
-                    if (value == 'clear') {
+                    if (value == 'settings') {
+                      Navigator.pushNamed(context, '/settings');
+                    } else if (value == 'clear') {
                       context.read<ChatProvider>().clearMessages();
                     } else if (value == 'reconnect') {
                       context.read<ChatProvider>().reconnect();
                     }
                   },
                   itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'settings',
+                      child: Row(
+                        children: [
+                          Icon(Icons.settings),
+                          SizedBox(width: 8),
+                          Text('Settings'),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem(
                       value: 'clear',
                       child: Row(

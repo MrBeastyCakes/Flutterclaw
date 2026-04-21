@@ -92,11 +92,47 @@ class WebSocketService {
 
       // Handle gateway handshake challenge
       if (msgType == 'event' && json['event'] == 'connect.challenge') {
-        final payload = json['payload'] as Map<String, dynamic>?;
-        final nonce = payload?['nonce'] as String?;
-        if (nonce != null) {
-          _sendConnectRequest(nonce);
+        try {
+          final payload = json['payload'] as Map<String, dynamic>?;
+          final nonce = payload?['nonce'] as String?;
+          if (nonce != null && _channel != null) {
+            _sendConnectRequest(nonce);
+          } else {
+            _connectionController.add(ConnectionInfo(
+              state: ConnectionState.error,
+              serverUrl: _serverUrl,
+              errorMessage: nonce == null ? 'No nonce in challenge' : 'Channel not ready',
+            ));
+          }
+        } catch (e) {
+          _connectionController.add(ConnectionInfo(
+            state: ConnectionState.error,
+            serverUrl: _serverUrl,
+            errorMessage: 'Challenge handling error: $e',
+          ));
         }
+        return;
+      }
+
+      // Handle hello-ok response (handshake complete)
+      if (msgType == 'res' && json['payload']?['type'] == 'hello-ok') {
+        _handshakeComplete = true;
+        _connectionController.add(ConnectionInfo(
+          state: ConnectionState.connected,
+          serverUrl: _serverUrl,
+          lastConnectedAt: DateTime.now(),
+        ));
+        return;
+      }
+
+      // Handle errors from gateway
+      if (msgType == 'res' && json['ok'] == false) {
+        final error = json['error']?['message'] ?? json['error']?.toString() ?? 'Unknown error';
+        _connectionController.add(ConnectionInfo(
+          state: ConnectionState.error,
+          serverUrl: _serverUrl,
+          errorMessage: 'Gateway error: $error',
+        ));
         return;
       }
 

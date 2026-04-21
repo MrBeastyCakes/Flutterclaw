@@ -5,6 +5,7 @@ import '../models/tool_call.dart';
 import '../models/connection_state.dart';
 import '../services/websocket_service.dart';
 import '../services/http_gateway_service.dart';
+import '../utils/logger.dart';
 
 class ChatProvider extends ChangeNotifier {
   final WebSocketService _webSocketService;
@@ -15,6 +16,7 @@ class ChatProvider extends ChangeNotifier {
   String? _error;
   String _searchQuery = '';
   bool _useHttpFallback = true; // Use HTTP API by default for reliability
+  List<String> _errorLog = [];
 
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   List<ChatMessage> get filteredMessages {
@@ -29,6 +31,7 @@ class ChatProvider extends ChangeNotifier {
   bool get isTyping => _isTyping;
   String? get error => _error;
   String get searchQuery => _searchQuery;
+  List<String> get errorLog => List.unmodifiable(_errorLog);
 
   StreamSubscription<ChatMessage>? _messageSubscription;
   StreamSubscription<ConnectionInfo>? _connectionSubscription;
@@ -139,6 +142,14 @@ class ChatProvider extends ChangeNotifier {
     _connectionInfo = info;
     if (info.state == ConnectionState.error) {
       _error = info.errorMessage;
+      if (_error != null && _error!.isNotEmpty) {
+        _errorLog.add('[${DateTime.now().toIso8601String()}] ${_error!}');
+        // Keep only last 50 errors
+        if (_errorLog.length > 50) {
+          _errorLog.removeAt(0);
+        }
+        AppLogger.error('Connection error: ${_error!}', tag: 'ChatProvider');
+      }
     } else {
       _error = null;
     }
@@ -147,6 +158,11 @@ class ChatProvider extends ChangeNotifier {
 
   void _onError(Object error) {
     _error = error.toString();
+    _errorLog.add('[${DateTime.now().toIso8601String()}] ERROR: ${_error!}');
+    if (_errorLog.length > 50) {
+      _errorLog.removeAt(0);
+    }
+    AppLogger.error('Stream error: ${_error!}', tag: 'ChatProvider');
     notifyListeners();
   }
 
@@ -174,10 +190,12 @@ class ChatProvider extends ChangeNotifier {
         if (response != null) {
           _messages.add(response);
         } else {
+          final lastError = _httpService.lastError ?? 'Unknown error';
           _messages.add(ChatMessage(
             role: MessageRole.system,
-            content: 'Failed to get response from server',
+            content: 'Failed to get response from server\n\nError: $lastError',
           ));
+          AppLogger.error('HTTP request failed: $lastError', tag: 'ChatProvider');
         }
         _isTyping = false;
         notifyListeners();

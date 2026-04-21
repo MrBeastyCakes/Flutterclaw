@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/message.dart';
 import '../models/connection_state.dart';
+import '../utils/logger.dart';
 
 /// OpenClaw Gateway HTTP API client (OpenAI-compatible).
 ///
@@ -17,9 +18,12 @@ class HttpGatewayService {
   String _serverUrl = _defaultServerUrl;
   String _authToken = '';
   String _chatId = 'flutter:main';
+  String? _lastError;
 
   final _connectionController = StreamController<ConnectionInfo>.broadcast();
   Stream<ConnectionInfo> get connectionStream => _connectionController.stream;
+
+  String? get lastError => _lastError;
 
   set serverUrl(String url) {
     // Normalize URL - remove ws:// prefix and replace with http://
@@ -37,6 +41,7 @@ class HttpGatewayService {
   String get serverUrl => _serverUrl;
 
   Future<bool> checkHealth() async {
+    AppLogger.info('Checking health at $_serverUrl/v1/models', tag: 'HTTP');
     try {
       final uri = Uri.parse('$_serverUrl/v1/models');
       final response = await http.get(
@@ -45,17 +50,22 @@ class HttpGatewayService {
       ).timeout(_timeout);
 
       final isOk = response.statusCode == 200;
+      _lastError = isOk ? null : 'HTTP ${response.statusCode}: ${response.body}';
+      AppLogger.info('Health check result: ${isOk ? "OK" : "FAIL ($_lastError)"}', tag: 'HTTP');
+      
       _connectionController.add(ConnectionInfo(
         state: isOk ? ConnectionState.connected : ConnectionState.error,
         serverUrl: _serverUrl,
-        errorMessage: isOk ? null : 'HTTP ${response.statusCode}',
+        errorMessage: _lastError,
       ));
       return isOk;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _lastError = 'Health check failed: $e';
+      AppLogger.error('Health check exception', tag: 'HTTP', error: e, stackTrace: stackTrace);
       _connectionController.add(ConnectionInfo(
         state: ConnectionState.error,
         serverUrl: _serverUrl,
-        errorMessage: e.toString(),
+        errorMessage: _lastError,
       ));
       return false;
     }
@@ -65,6 +75,7 @@ class HttpGatewayService {
     String content, {
     List<ChatMessage> history = const [],
   }) async {
+    AppLogger.info('Sending message to $_serverUrl/v1/chat/completions', tag: 'HTTP');
     try {
       _connectionController.add(ConnectionInfo(
         state: ConnectionState.connecting,
@@ -72,6 +83,8 @@ class HttpGatewayService {
       ));
 
       final messages = _buildMessages(content, history);
+      AppLogger.debug('Request body: ${jsonEncode({"model": "openclaw/default", "messages": messages, "stream": false})}', tag: 'HTTP');
+      
       final response = await http.post(
         Uri.parse('$_serverUrl/v1/chat/completions'),
         headers: _buildHeaders(),
@@ -82,11 +95,16 @@ class HttpGatewayService {
         }),
       ).timeout(const Duration(minutes: 2));
 
+      AppLogger.info('Response status: ${response.statusCode}', tag: 'HTTP');
+      AppLogger.debug('Response body: ${response.body}', tag: 'HTTP');
+
       if (response.statusCode != 200) {
+        _lastError = 'HTTP ${response.statusCode}: ${response.body}';
+        AppLogger.error('Request failed: $_lastError', tag: 'HTTP');
         _connectionController.add(ConnectionInfo(
           state: ConnectionState.error,
           serverUrl: _serverUrl,
-          errorMessage: 'HTTP ${response.statusCode}: ${response.body}',
+          errorMessage: _lastError,
         ));
         return null;
       }
@@ -94,15 +112,20 @@ class HttpGatewayService {
       final json = jsonDecode(response.body);
       final choices = json['choices'] as List?;
       if (choices == null || choices.isEmpty) {
+        _lastError = 'No choices in response';
+        AppLogger.error(_lastError!, tag: 'HTTP');
         return null;
       }
 
       final choice = choices[0];
       final message = choice['message'] as Map<String, dynamic>?;
       if (message == null) {
+        _lastError = 'No message in choice';
+        AppLogger.error(_lastError!, tag: 'HTTP');
         return null;
       }
 
+      _lastError = null;
       _connectionController.add(ConnectionInfo(
         state: ConnectionState.connected,
         serverUrl: _serverUrl,
@@ -116,11 +139,13 @@ class HttpGatewayService {
           'finish_reason': choice['finish_reason'],
         },
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _lastError = 'Request exception: $e';
+      AppLogger.error('Request exception', tag: 'HTTP', error: e, stackTrace: stackTrace);
       _connectionController.add(ConnectionInfo(
         state: ConnectionState.error,
         serverUrl: _serverUrl,
-        errorMessage: e.toString(),
+        errorMessage: _lastError,
       ));
       return null;
     }

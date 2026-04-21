@@ -17,10 +17,27 @@ class SettingsScreen extends StatelessWidget {
         children: [
           _SectionHeader(title: 'Connection'),
           _SettingTile(
-            icon: Icons.dns,
+            icon: Icons.edit,
             title: 'Server URL',
             subtitle: 'WebSocket endpoint for OpenClaw',
-            trailing: const Icon(Icons.chevron_right),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Consumer<ChatProvider>(
+                  builder: (context, provider, child) {
+                    return Text(
+                      provider.connectionInfo.serverUrl ?? 'ws://192.168.92.79:18789',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right, size: 20),
+              ],
+            ),
             onTap: () => _showServerUrlDialog(context),
           ),
           _SettingTile(
@@ -129,8 +146,9 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showServerUrlDialog(BuildContext context) {
+    final provider = context.read<ChatProvider>();
     final controller = TextEditingController(
-      text: 'ws://192.168.92.79:18789',
+      text: provider.connectionInfo.serverUrl ?? 'ws://192.168.92.79:18789',
     );
     showDialog(
       context: context,
@@ -139,7 +157,7 @@ class SettingsScreen extends StatelessWidget {
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
-            hintText: 'ws://localhost:8765',
+            hintText: 'ws://192.168.92.79:18789',
             labelText: 'WebSocket URL',
           ),
         ),
@@ -150,7 +168,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () {
-              context.read<ChatProvider>().setServerUrl(controller.text);
+              provider.setServerUrl(controller.text);
               Navigator.pop(context);
             },
             child: const Text('Save'),

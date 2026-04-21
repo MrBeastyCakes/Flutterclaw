@@ -115,25 +115,35 @@ class WebSocketService {
       }
 
       // Handle hello-ok response (handshake complete)
-      if (msgType == 'res' && json['payload']?['type'] == 'hello-ok') {
-        _handshakeComplete = true;
-        _connectionController.add(ConnectionInfo(
-          state: ConnectionState.connected,
-          serverUrl: _serverUrl,
-          lastConnectedAt: DateTime.now(),
-        ));
-        return;
-      }
-
-      // Handle errors from gateway
-      if (msgType == 'res' && json['ok'] == false) {
-        final error = json['error']?['message'] ?? json['error']?.toString() ?? 'Unknown error';
-        _connectionController.add(ConnectionInfo(
-          state: ConnectionState.error,
-          serverUrl: _serverUrl,
-          errorMessage: 'Gateway error: $error',
-        ));
-        return;
+      if (msgType == 'res') {
+        final payload = json['payload'] as Map<String, dynamic>?;
+        final payloadType = payload?['type'] as String?;
+        
+        if (payloadType == 'hello-ok') {
+          _handshakeComplete = true;
+          _connectionController.add(ConnectionInfo(
+            state: ConnectionState.connected,
+            serverUrl: _serverUrl,
+            lastConnectedAt: DateTime.now(),
+          ));
+          return;
+        }
+        
+        // If it's a successful response but not hello-ok, just acknowledge
+        if (json['ok'] == true) {
+          return;
+        }
+        
+        // Handle errors
+        if (json['ok'] == false) {
+          final error = json['error']?['message'] ?? json['error']?.toString() ?? 'Unknown error';
+          _connectionController.add(ConnectionInfo(
+            state: ConnectionState.error,
+            serverUrl: _serverUrl,
+            errorMessage: 'Gateway error: $error',
+          ));
+          return;
+        }
       }
 
       // Handle hello-ok response (handshake complete)

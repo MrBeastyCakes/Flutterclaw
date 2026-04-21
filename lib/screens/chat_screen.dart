@@ -1,27 +1,76 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
-import '../widgets/message_list.dart';
-import '../widgets/message_input.dart';
-import '../widgets/connection_status_bar.dart';
+import '../models/message.dart';
+import 'message_list.dart';
+import 'message_input.dart';
+import 'connection_status_bar.dart';
+import 'package:provider/provider.dart';
 
-class ChatScreen extends StatelessWidget {
+class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutterclaw'),
-        centerTitle: true,
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Search messages...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                onChanged: (value) {
+                  context.read<ChatProvider>().setSearchQuery(value);
+                },
+              )
+            : const Text('Flutterclaw'),
+        centerTitle: !_isSearching,
         elevation: 0,
+        leading: _isSearching
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  setState(() => _isSearching = false);
+                  _searchController.clear();
+                  context.read<ChatProvider>().setSearchQuery('');
+                },
+              )
+            : null,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              // TODO: Navigate to settings
-            },
-          ),
+          if (!_isSearching) ...[
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () => setState(() => _isSearching = true),
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () {
+                Navigator.pushNamed(context, '/settings');
+              },
+            ),
+          ],
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'clear') {
@@ -61,7 +110,8 @@ class ChatScreen extends StatelessWidget {
           Expanded(
             child: Consumer<ChatProvider>(
               builder: (context, provider, child) {
-                if (provider.messages.isEmpty) {
+                final messages = provider.filteredMessages;
+                if (messages.isEmpty && !_isSearching) {
                   return const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -83,7 +133,12 @@ class ChatScreen extends StatelessWidget {
                     ),
                   );
                 }
-                return MessageList(messages: provider.messages);
+                if (messages.isEmpty && _isSearching) {
+                  return const Center(
+                    child: Text('No messages found'),
+                  );
+                }
+                return MessageList(messages: messages);
               },
             ),
           ),

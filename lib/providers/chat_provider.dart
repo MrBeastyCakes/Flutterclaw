@@ -10,11 +10,21 @@ class ChatProvider extends ChangeNotifier {
   ConnectionInfo _connectionInfo = const ConnectionInfo();
   bool _isTyping = false;
   String? _error;
+  String _searchQuery = '';
 
   List<ChatMessage> get messages => List.unmodifiable(_messages);
+  List<ChatMessage> get filteredMessages {
+    if (_searchQuery.isEmpty) return messages;
+    final lower = _searchQuery.toLowerCase();
+    return _messages
+        .where((m) => m.content.toLowerCase().contains(lower))
+        .toList();
+  }
+
   ConnectionInfo get connectionInfo => _connectionInfo;
   bool get isTyping => _isTyping;
   String? get error => _error;
+  String get searchQuery => _searchQuery;
 
   StreamSubscription<ChatMessage>? _messageSubscription;
   StreamSubscription<ConnectionInfo>? _connectionSubscription;
@@ -86,13 +96,41 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  void removeMessage(String messageId) {
-    _messages.removeWhere((m) => m.id == messageId);
+  /// Retry a previously-failed or any user message.
+  void retryMessage(ChatMessage message) {
+    final index = _messages.indexWhere((m) => m.id == message.id);
+    if (index == -1) return;
+
+    // Remove the old message and its assistant response (if any)
+    _messages.removeAt(index);
+    // Also remove any consecutive assistant/tool messages that followed
+    while (index < _messages.length &&
+        (_messages[index].role == MessageRole.assistant ||
+         _messages[index].role == MessageRole.tool)) {
+      _messages.removeAt(index);
+    }
+
+    notifyListeners();
+
+    // Re-send
+    sendMessage(message.content, metadata: message.metadata);
+  }
+
+  /// Delete a message by ID.
+  void deleteMessage(String id) {
+    _messages.removeWhere((m) => m.id == id);
     notifyListeners();
   }
 
-  void retryMessage(String content) {
-    sendMessage(content);
+  /// Filter messages by search query.
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
+
+  void clearMessages() {
+    _messages.clear();
+    notifyListeners();
   }
 
   void clearError() {

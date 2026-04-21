@@ -78,7 +78,7 @@ class FlutterclawApp extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         backgroundColor: isDark ? const Color(0xFF2A2A2A) : cs.inverseSurface,
         contentTextStyle: TextStyle(
-          color: isDark ? cs.onSurface : cs.inverseOnSurface,
+          color: isDark ? cs.onSurface : cs.onInverseSurface,
           // fontFamily: 'Inter',
         ),
       ),
@@ -90,7 +90,7 @@ class FlutterclawApp extends StatelessWidget {
         ),
       ),
       // Cards / Containers
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cs.surfaceContainerHighest,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -104,13 +104,13 @@ class FlutterclawApp extends StatelessWidget {
           borderSide: BorderSide.none,
         ),
         hintStyle: TextStyle(
-          color: cs.onSurfaceVariant.withOpacity(0.6),
+          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
           // fontFamily: 'Inter',
         ),
       ),
       // Dividers
       dividerTheme: DividerThemeData(
-        color: cs.outlineVariant.withOpacity(0.5),
+        color: cs.outlineVariant.withValues(alpha: 0.5),
       ),
       // Progress indicators
       progressIndicatorTheme: ProgressIndicatorThemeData(

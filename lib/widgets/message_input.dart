@@ -126,7 +126,6 @@ class _MessageInputState extends State<MessageInput>
                   ? ScaleTransition(
                       scale: _sendScale,
                       child: IconButton.filled(
-                        key: const ValueKey('send'),
                         onPressed: _sendMessage,
                         icon: const Icon(Icons.send),
                         style: IconButton.styleFrom(
@@ -136,7 +135,6 @@ class _MessageInputState extends State<MessageInput>
                       ),
                     )
                   : _IconButtonScale(
-                      key: const ValueKey('mic'),
                       icon: Icons.mic_none,
                       onTap: () {
                         // TODO: Voice input

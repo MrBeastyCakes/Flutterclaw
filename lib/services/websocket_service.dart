@@ -5,6 +5,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
 import '../models/message.dart';
 import '../models/connection_state.dart';
+import '../models/tool_call.dart';
 
 /// Callback for streaming message chunks
 typedef StreamChunkCallback = void Function(String messageId, String chunk, {String? thinking, List<ToolUsage>? toolUsages});

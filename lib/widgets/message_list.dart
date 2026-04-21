@@ -112,7 +112,8 @@ class _MessageListState extends State<MessageList> {
           return MessageBubble(
             message: message,
             showTimestamp: showTimestamp,
-            isFirstInGroup: isFirstInGroup,
+            onRetry: () => _retryMessage(context, message),
+            onDelete: () => _deleteMessage(context, message.id),
           );
         },
       ),
@@ -129,6 +130,14 @@ class _MessageListState extends State<MessageList> {
   bool _isFirstInGroup(List<ChatMessage> msgs, int index) {
     if (index == 0) return true;
     return msgs[index].role != msgs[index - 1].role;
+  }
+
+  void _retryMessage(BuildContext context, ChatMessage message) {
+    context.read<ChatProvider>().retryMessage(message);
+  }
+
+  void _deleteMessage(BuildContext context, String messageId) {
+    context.read<ChatProvider>().deleteMessage(messageId);
   }
 
   @override

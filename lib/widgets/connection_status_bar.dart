@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
-import '../models/connection_state.dart';
+import '../models/connection_state.dart' as model;
 
 class ConnectionStatusBar extends StatelessWidget {
   const ConnectionStatusBar({super.key});
@@ -14,7 +14,7 @@ class ConnectionStatusBar extends StatelessWidget {
       builder: (context, provider, child) {
         final info = provider.connectionInfo;
         
-        if (info.state == ConnectionState.connected) {
+        if (info.state == model.ConnectionState.connected) {
           return const SizedBox.shrink();
         }
 
@@ -24,7 +24,7 @@ class ConnectionStatusBar extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           color: colors.background,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: SafeArea(
             top: false,
             child: Row(
@@ -33,7 +33,7 @@ class ConnectionStatusBar extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    _getMessage(info),
+                    _statusText(info),
                     style: TextStyle(
                       color: colors.text,
                       fontSize: 13,
@@ -41,8 +41,8 @@ class ConnectionStatusBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (info.state == ConnectionState.error ||
-                    info.state == ConnectionState.disconnected)
+                if (info.state == model.ConnectionState.error ||
+                    info.state == model.ConnectionState.disconnected)
                   TextButton(
                     onPressed: () => provider.reconnect(),
                     style: TextButton.styleFrom(
@@ -61,12 +61,12 @@ class ConnectionStatusBar extends StatelessWidget {
     );
   }
 
-  _StatusColors _themeColors(ConnectionState state, ColorScheme cs) {
+  _StatusColors _themeColors(model.ConnectionState state, ColorScheme cs) {
     switch (state) {
-      case ConnectionState.connecting:
-      case ConnectionState.reconnecting:
+      case model.ConnectionState.connecting:
+      case model.ConnectionState.reconnecting:
         return _StatusColors(
-          background: cs.primaryContainer.withOpacity(0.7),
+          background: cs.primaryContainer.withValues(alpha: 0.7),
           text: cs.onPrimaryContainer,
           icon: SizedBox(
             width: 16,
@@ -77,14 +77,18 @@ class ConnectionStatusBar extends StatelessWidget {
             ),
           ),
         );
-      case ConnectionState.error:
-      case ConnectionState.disconnected:
+      case model.ConnectionState.error:
+      case model.ConnectionState.disconnected:
         return _StatusColors(
-          background: cs.errorContainer.withOpacity(0.8),
+          background: cs.errorContainer.withValues(alpha: 0.7),
           text: cs.onErrorContainer,
-          icon: Icon(Icons.error_outline, size: 18, color: cs.onErrorContainer),
+          icon: Icon(
+            Icons.error_outline,
+            size: 18,
+            color: cs.onErrorContainer,
+          ),
         );
-      case ConnectionState.connected:
+      case model.ConnectionState.connected:
         return _StatusColors(
           background: Colors.transparent,
           text: Colors.transparent,
@@ -93,17 +97,17 @@ class ConnectionStatusBar extends StatelessWidget {
     }
   }
 
-  String _getMessage(ConnectionInfo info) {
+  String _statusText(model.ConnectionInfo info) {
     switch (info.state) {
-      case ConnectionState.connecting:
-        return 'Connecting to OpenClaw…';
-      case ConnectionState.reconnecting:
-        return 'Reconnecting (attempt ${info.reconnectAttempts})…';
-      case ConnectionState.error:
+      case model.ConnectionState.connecting:
+        return 'Connecting to OpenClaw...';
+      case model.ConnectionState.reconnecting:
+        return 'Reconnecting (attempt ${info.reconnectAttempts})...';
+      case model.ConnectionState.error:
         return info.errorMessage ?? 'Connection error';
-      case ConnectionState.disconnected:
+      case model.ConnectionState.disconnected:
         return 'Disconnected from OpenClaw';
-      case ConnectionState.connected:
+      case model.ConnectionState.connected:
         return '';
     }
   }
@@ -113,6 +117,7 @@ class _StatusColors {
   final Color background;
   final Color text;
   final Widget icon;
+
   const _StatusColors({
     required this.background,
     required this.text,

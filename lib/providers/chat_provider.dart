@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/message.dart';
+import '../models/tool_call.dart';
 import '../models/connection_state.dart';
 import '../services/websocket_service.dart';
 
@@ -68,7 +69,10 @@ class ChatProvider extends ChangeNotifier {
       );
       if (lastAssistantIndex != -1) {
         final current = _messages[lastAssistantIndex];
-        final updatedToolUsages = [...?(current.toolUsages ?? []), ...?(message.toolUsages ?? [])];
+        final updatedToolUsages = <ToolUsage>[
+          ...(current.toolUsages ?? []),
+          ...(message.toolUsages ?? []),
+        ];
         _messages[lastAssistantIndex] = current.copyWith(
           toolUsages: updatedToolUsages.isNotEmpty ? updatedToolUsages : null,
         );

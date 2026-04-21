@@ -48,11 +48,29 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => _showChatIdDialog(context),
           ),
           _SettingTile(
-            icon: Icons.person,
-            title: 'Display Name',
-            subtitle: 'Your name in conversations',
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showNameDialog(context),
+            icon: Icons.key,
+            title: 'Auth Token',
+            subtitle: 'Gateway authentication token',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Consumer<ChatProvider>(
+                  builder: (context, provider, child) {
+                    final hasToken = provider.connectionInfo.serverUrl != null;
+                    return Text(
+                      hasToken ? 'Configured' : 'Not set',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right, size: 20),
+              ],
+            ),
+            onTap: () => _showAuthTokenDialog(context),
           ),
           const Divider(),
           _SectionHeader(title: 'Connection Control'),
@@ -239,6 +257,37 @@ class SettingsScreen extends StatelessWidget {
           FilledButton(
             onPressed: () {
               context.read<ChatProvider>().setSenderName(controller.text);
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAuthTokenDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Auth Token'),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: const InputDecoration(
+            hintText: 'Enter gateway token',
+            labelText: 'Token',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              context.read<ChatProvider>().setAuthToken(controller.text);
               Navigator.pop(context);
             },
             child: const Text('Save'),

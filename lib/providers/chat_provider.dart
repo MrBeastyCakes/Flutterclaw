@@ -219,6 +219,11 @@ class ChatProvider extends ChangeNotifier {
     reconnect();
   }
 
+  void setAuthToken(String token) {
+    _webSocketService.authToken = token;
+    reconnect();
+  }
+
   void setChatId(String chatId) {
     _webSocketService.chatId = chatId;
     reconnect();

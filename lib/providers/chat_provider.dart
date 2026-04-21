@@ -29,6 +29,7 @@ class ChatProvider extends ChangeNotifier {
 
   StreamSubscription<ChatMessage>? _messageSubscription;
   StreamSubscription<ConnectionInfo>? _connectionSubscription;
+  StreamSubscription<Map<String, dynamic>>? _streamChunkSubscription;
 
   ChatProvider({WebSocketService? webSocketService})
       : _webSocketService = webSocketService ?? WebSocketService();
@@ -41,6 +42,11 @@ class ChatProvider extends ChangeNotifier {
 
     _connectionSubscription = _webSocketService.connectionStream.listen(
       _onConnectionChanged,
+      onError: _onError,
+    );
+
+    _streamChunkSubscription = _webSocketService.streamChunkStream.listen(
+      _onStreamChunk,
       onError: _onError,
     );
 
@@ -218,10 +224,47 @@ class ChatProvider extends ChangeNotifier {
     _webSocketService.senderName = name;
   }
 
+  void _onStreamChunk(Map<String, dynamic> chunk) {
+    final messageId = chunk['messageId'] as String;
+    final textChunk = chunk['chunk'] as String;
+    final thinking = chunk['thinking'] as String?;
+    final toolUsages = chunk['toolUsages'] as List<ToolUsage>?;
+    final isComplete = chunk['isComplete'] as bool? ?? false;
+
+    // Find existing streaming message or create placeholder
+    var index = _messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) {
+      // Create placeholder streaming message
+      _messages.add(ChatMessage(
+        id: messageId,
+        role: MessageRole.assistant,
+        content: textChunk,
+        thinking: thinking,
+        isStreaming: true,
+        toolUsages: toolUsages,
+      ));
+      notifyListeners();
+    } else {
+      // Update existing message
+      final current = _messages[index];
+      _messages[index] = current.copyWith(
+        content: current.content + textChunk,
+        thinking: thinking ?? current.thinking,
+        toolUsages: toolUsages ?? current.toolUsages,
+      );
+      notifyListeners();
+    }
+
+    if (isComplete) {
+      finalizeStreamingMessage(messageId);
+    }
+  }
+
   @override
   void dispose() {
     _messageSubscription?.cancel();
     _connectionSubscription?.cancel();
+    _streamChunkSubscription?.cancel();
     _webSocketService.dispose();
     super.dispose();
   }

@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/message.dart';
 import 'tool_timeline.dart';
+import 'message_actions.dart';
 
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
   final bool showTimestamp;
+  final VoidCallback? onRetry;
+  final VoidCallback? onDelete;
 
   const MessageBubble({
     super.key,
     required this.message,
     this.showTimestamp = false,
+    this.onRetry,
+    this.onDelete,
   });
 
   @override
@@ -27,12 +32,28 @@ class MessageBubble extends StatelessWidget {
           isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         if (showTimestamp) _buildTimestamp(context),
-        if (isUser || isSystem) _buildMessageBubble(context, isUser, isSystem)
-        else _buildAssistantMessage(context),
+        GestureDetector(
+          onLongPress: () => _showActions(context),
+          child: isUser || isSystem
+              ? _buildMessageBubble(context, isUser, isSystem)
+              : _buildAssistantMessage(context),
+        ),
         if (message.toolUsages != null && message.toolUsages!.isNotEmpty)
           ToolTimeline(toolUsages: message.toolUsages!),
       ],
     );
+  }
+
+  void _showActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => MessageActions(
+        message: message,
+        onRetry: onRetry,
+        onDelete: onDelete,
+      ),
+    );
+  }
   }
 
   Widget _buildAssistantMessage(BuildContext context) {

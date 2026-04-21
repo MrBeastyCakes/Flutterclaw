@@ -86,9 +86,13 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  void clearMessages() {
-    _messages.clear();
+  void removeMessage(String messageId) {
+    _messages.removeWhere((m) => m.id == messageId);
     notifyListeners();
+  }
+
+  void retryMessage(String content) {
+    sendMessage(content);
   }
 
   void clearError() {

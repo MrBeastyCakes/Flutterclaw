@@ -130,7 +130,7 @@ class SettingsScreen extends StatelessWidget {
 
   void _showServerUrlDialog(BuildContext context) {
     final controller = TextEditingController(
-      text: 'ws://localhost:8765',
+      text: 'ws://192.168.92.79:18789',
     );
     showDialog(
       context: context,

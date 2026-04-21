@@ -11,7 +11,7 @@ import '../models/tool_call.dart';
 typedef StreamChunkCallback = void Function(String messageId, String chunk, {String? thinking, List<ToolUsage>? toolUsages});
 
 class WebSocketService {
-  static const String _defaultServerUrl = 'ws://localhost:8765';
+  static const String _defaultServerUrl = 'ws://192.168.92.79:18789';
   static const int _maxReconnectAttempts = 5;
   static const Duration _reconnectDelay = Duration(seconds: 3);
   

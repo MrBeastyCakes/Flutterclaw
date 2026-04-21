@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/message.dart';
+import 'tool_timeline.dart';
 
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
@@ -26,28 +27,71 @@ class MessageBubble extends StatelessWidget {
           isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         if (showTimestamp) _buildTimestamp(context),
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isUser
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(20),
-              topRight: const Radius.circular(20),
-              bottomLeft: Radius.circular(isUser ? 20 : 4),
-              bottomRight: Radius.circular(isUser ? 4 : 20),
+        if (isUser || isSystem) _buildMessageBubble(context, isUser, isSystem)
+        else _buildAssistantMessage(context),
+        if (message.toolUsages != null && message.toolUsages!.isNotEmpty)
+          ToolTimeline(toolUsages: message.toolUsages!),
+      ],
+    );
+  }
+
+  Widget _buildAssistantMessage(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.75,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message.content,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 16,
             ),
           ),
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          const SizedBox(height: 4),
+          Text(
+            _formatTime(message.timestamp),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                message.content,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(BuildContext context, bool isUser, bool isSystem) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isUser
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(20),
+          topRight: const Radius.circular(20),
+          bottomLeft: Radius.circular(isUser ? 20 : 4),
+          bottomRight: Radius.circular(isUser ? 4 : 20),
+        ),
+      ),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.75,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message.content,
                 style: TextStyle(
                   color: isUser
                       ? Theme.of(context).colorScheme.onPrimary
@@ -83,8 +127,7 @@ class MessageBubble extends StatelessWidget {
             ],
           ),
         ),
-      ],
-    );
+      );
   }
 
   Widget _buildSystemMessage(BuildContext context) {

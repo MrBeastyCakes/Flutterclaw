@@ -1,9 +1,11 @@
 import 'package:uuid/uuid.dart';
+import 'tool_call.dart';
 
 enum MessageRole {
   user,
   assistant,
   system,
+  tool,
 }
 
 enum MessageStatus {
@@ -20,6 +22,7 @@ class ChatMessage {
   final DateTime timestamp;
   final MessageStatus status;
   final Map<String, dynamic>? metadata;
+  final List<ToolUsage>? toolUsages;
 
   ChatMessage({
     String? id,
@@ -28,6 +31,7 @@ class ChatMessage {
     DateTime? timestamp,
     this.status = MessageStatus.sent,
     this.metadata,
+    this.toolUsages,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? DateTime.now();
 

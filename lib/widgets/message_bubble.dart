@@ -234,6 +234,7 @@ class MessageBubble extends StatelessWidget {
   void _showActions(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      useSafeArea: true,
       builder: (context) => MessageActions(
         message: message,
         onRetry: onRetry,

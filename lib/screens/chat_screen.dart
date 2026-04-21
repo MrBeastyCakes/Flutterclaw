@@ -87,24 +87,28 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ],
       ),
-      body: Column(
-        children: [
-          const ConnectionStatusBar(),
-          Expanded(
-            child: Consumer<ChatProvider>(
-              builder: (context, provider, child) {
-                if (provider.messages.isEmpty) {
-                  return _buildEmptyState(context);
-                }
-                return MessageList(
-                  messages: provider.messages,
-                  isTyping: provider.isTyping,
-                );
-              },
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Column(
+          children: [
+            const ConnectionStatusBar(),
+            Expanded(
+              child: Consumer<ChatProvider>(
+                builder: (context, provider, child) {
+                  if (provider.messages.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
+                  return MessageList(
+                    messages: provider.messages,
+                    isTyping: provider.isTyping,
+                  );
+                },
+              ),
             ),
-          ),
-          const MessageInput(),
-        ],
+            const MessageInput(),
+          ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/chat_provider.dart';
 import 'screens/chat_screen.dart';
+import 'screens/settings_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,9 @@ class FlutterclawApp extends StatelessWidget {
         darkTheme: _buildTheme(Brightness.dark),
         themeMode: ThemeMode.system,
         home: const ChatScreen(),
+        routes: {
+          '/settings': (context) => const SettingsScreen(),
+        },
       ),
     );
   }

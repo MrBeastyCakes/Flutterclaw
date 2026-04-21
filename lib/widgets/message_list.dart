@@ -80,15 +80,6 @@ class _MessageListState extends State<MessageList> {
       onRefresh: () async {
         // Simulate refresh — in production this would fetch history
         await Future.delayed(const Duration(milliseconds: 800));
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('History refreshed'),
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 1),
-            ),
-          );
-        }
       },
       displacement: 40,
       color: Theme.of(context).colorScheme.primary,
@@ -133,11 +124,15 @@ class _MessageListState extends State<MessageList> {
   }
 
   void _retryMessage(BuildContext context, ChatMessage message) {
-    context.read<ChatProvider>().retryMessage(message);
+    if (mounted) {
+      context.read<ChatProvider>().retryMessage(message);
+    }
   }
 
   void _deleteMessage(BuildContext context, String messageId) {
-    context.read<ChatProvider>().deleteMessage(messageId);
+    if (mounted) {
+      context.read<ChatProvider>().deleteMessage(messageId);
+    }
   }
 
   @override

@@ -150,30 +150,40 @@ class SettingsScreen extends StatelessWidget {
     final controller = TextEditingController(
       text: provider.connectionInfo.serverUrl ?? 'ws://192.168.92.79:18789',
     );
+    String? errorText;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Server URL'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'ws://192.168.92.79:18789',
-            labelText: 'WebSocket URL',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Server URL'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.url,
+            decoration: InputDecoration(
+              hintText: 'ws://192.168.92.79:18789',
+              labelText: 'WebSocket URL',
+              errorText: errorText,
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final url = controller.text.trim();
+                if (!url.startsWith('ws://') && !url.startsWith('wss://')) {
+                  setState(() => errorText = 'Must start with ws:// or wss://');
+                  return;
+                }
+                provider.setServerUrl(url);
+                Navigator.pop(context);
+              },
+              child: const Text('Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              provider.setServerUrl(controller.text);
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }

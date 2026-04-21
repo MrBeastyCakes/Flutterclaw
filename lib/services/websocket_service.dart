@@ -224,10 +224,10 @@ class WebSocketService {
         'minProtocol': 3,
         'maxProtocol': 3,
         'client': {
-          'id': 'cli',
-          'version': '0.3.7',
+          'id': 'openclaw-android',
+          'version': '0.3.8',
           'platform': 'android',
-          'mode': 'operator',
+          'mode': 'ui',
         },
         'role': 'operator',
         'scopes': ['operator.read', 'operator.write'],

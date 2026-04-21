@@ -5,7 +5,7 @@ import 'package:flutterclaw/services/websocket_service.dart';
 
 class _FakeWebSocketService extends Fake implements WebSocketService {
   @override
-  void sendMessage(String content, {Map<String, dynamic>? metadata}) {}
+  Future<void> sendMessage(String content, {Map<String, dynamic>? metadata}) async {}
 
   @override
   void dispose() {}

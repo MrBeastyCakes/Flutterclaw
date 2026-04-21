@@ -4,14 +4,17 @@ import '../models/message.dart';
 import '../models/tool_call.dart';
 import '../models/connection_state.dart';
 import '../services/websocket_service.dart';
+import '../services/http_gateway_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   final WebSocketService _webSocketService;
+  final HttpGatewayService _httpService;
   final List<ChatMessage> _messages = [];
   ConnectionInfo _connectionInfo = const ConnectionInfo();
   bool _isTyping = false;
   String? _error;
   String _searchQuery = '';
+  bool _useHttpFallback = true; // Use HTTP API by default for reliability
 
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   List<ChatMessage> get filteredMessages {
@@ -32,7 +35,8 @@ class ChatProvider extends ChangeNotifier {
   StreamSubscription<Map<String, dynamic>>? _streamChunkSubscription;
 
   ChatProvider({WebSocketService? webSocketService})
-      : _webSocketService = webSocketService ?? WebSocketService();
+      : _webSocketService = webSocketService ?? WebSocketService(),
+        _httpService = HttpGatewayService();
 
   void initialize() {
     _messageSubscription = _webSocketService.messageStream.listen(
@@ -51,6 +55,15 @@ class ChatProvider extends ChangeNotifier {
     );
 
     _webSocketService.connect();
+
+    // Also initialize HTTP service connection monitoring
+    _httpService.connectionStream.listen(
+      _onConnectionChanged,
+      onError: _onError,
+    );
+
+    // Check HTTP health to see if we can connect
+    _httpService.checkHealth();
   }
 
   void _onMessageReceived(ChatMessage message) {
@@ -137,7 +150,7 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void sendMessage(String content, {Map<String, dynamic>? metadata}) {
+  void sendMessage(String content, {Map<String, dynamic>? metadata}) async {
     try {
       final message = ChatMessage(
         role: MessageRole.user,
@@ -149,7 +162,28 @@ class ChatProvider extends ChangeNotifier {
       _isTyping = true;
       notifyListeners();
 
-      _webSocketService.sendMessage(content, metadata: metadata);
+      if (_useHttpFallback) {
+        // Use HTTP API
+        _httpService.serverUrl = _connectionInfo.serverUrl ?? 'ws://192.168.92.79:18789';
+
+        final response = await _httpService.sendMessage(
+          content,
+          history: _messages.where((m) => m.role != MessageRole.system).toList(),
+        );
+
+        if (response != null) {
+          _messages.add(response);
+        } else {
+          _messages.add(ChatMessage(
+            role: MessageRole.system,
+            content: 'Failed to get response from server',
+          ));
+        }
+        _isTyping = false;
+        notifyListeners();
+      } else {
+        _webSocketService.sendMessage(content, metadata: metadata);
+      }
       
       // Update message status
       final index = _messages.indexOf(message);
@@ -216,11 +250,13 @@ class ChatProvider extends ChangeNotifier {
 
   void setServerUrl(String url) {
     _webSocketService.serverUrl = url;
+    _httpService.serverUrl = url;
     reconnect();
   }
 
   void setAuthToken(String token) {
     _webSocketService.authToken = token;
+    _httpService.authToken = token;
     reconnect();
   }
 
@@ -275,6 +311,7 @@ class ChatProvider extends ChangeNotifier {
     _connectionSubscription?.cancel();
     _streamChunkSubscription?.cancel();
     _webSocketService.dispose();
+    _httpService.dispose();
     super.dispose();
   }
 }
